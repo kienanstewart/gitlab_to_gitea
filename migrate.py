@@ -519,12 +519,16 @@ def _import_project_repo(gitea_api: pygitea, project: gitlab.v4.objects.Project)
 def _import_project_repo_collaborators(gitea_api: pygitea, collaborators: [gitlab.v4.objects.ProjectMember], project: gitlab.v4.objects.Project):
     for collaborator in collaborators:
         if not collaborator_exists(gitea_api, name_clean(project.namespace['path']), name_clean(project.name), collaborator.username):
-            if collaborator.id == project.owner['id']:
-                # Skip adding project owner as a collaborator, since that is inherent
-                # on the Gitea side
-                print_warning("Skipping import of collaborator {} for {}/{} since they are the project owner".format(
-                    collaborator.username, project.namespace['path'], project.name))
-                continue
+            try:
+                owner_id = project.owner['id']
+                if collaborator.id == project.owner['id']:
+                    # Skip adding project owner as a collaborator, since that is inherent
+                    # on the Gitea side
+                    print_warning("Skipping import of collaborator {} for {}/{} since they are the project owner".format(
+                        collaborator.username, project.namespace['path'], project.name))
+                    continue
+            except AttributeError:
+                print_info("Project {}/{} has no owner".format(project.namespace['path'], project.name))
             permission = "read"
 
             if collaborator.access_level == 10:    # guest access
@@ -699,6 +703,12 @@ def import_projects(gitlab_api: gitlab.Gitlab, gitea_api: pygitea, projects: Lis
         else:
             projectOwner = name_clean(project.namespace['path'])
             projectName = name_clean(project.name)
+
+            # To have access to all fields, reload the project.
+            # When migrating with the migration by groups option disabled,
+            # the project list is loaded using `gitlab_api.list(all=True)`
+            # which doesn't load all fields.
+            project = gitlab_api.projects.get(id=project.id)
 
             # import project repo
             _import_project_repo(gitea_api, project)
