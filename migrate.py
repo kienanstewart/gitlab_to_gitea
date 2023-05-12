@@ -173,7 +173,7 @@ def get_labels(gitea_api: pygitea, owner: string, repo: string) -> []:
     if label_response.ok:
         existing_labels = label_response.json()
     else:
-        print_error("Failed to load existing milestones for project " + repo + "! " + label_response.text)
+        print_error("Failed to load existing labels for project " + repo + "! " + label_response.text)
 
     return existing_labels
 
