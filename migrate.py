@@ -48,6 +48,45 @@ PROJECT_IDS = os.getenv('PROJECT_IDS', '')
 #######################
 
 
+GITEA_RESERVED_USERNAMES = [
+    ".",
+    "..",
+    ".well-known",
+    "admin",
+    "api",
+    "assets",
+    "attachments",
+    "avatar",
+    "avatars",
+    "captcha",
+    "commits",
+    "debug",
+    "error",
+    "explore",
+    "favicon.ico",
+    "ghost",
+    "issues",
+    "login",
+    "manifest.json",
+    "metrics",
+    "milestones",
+    "new",
+    "notifications",
+    "org",
+    "pulls",
+    "raw",
+    "repo",
+    "repo-avatars",
+    "robots.txt",
+    "search",
+    "serviceworker.js",
+    "ssh_info",
+    "swagger.v1.json",
+    "user",
+    "v2",
+    "gitea-actions",
+]
+
 def main():
     print_color(bcolors.HEADER, "---=== Gitlab to Gitea migration ===---")
     print("Version: " + SCRIPT_VERSION)
@@ -508,6 +547,10 @@ def _import_project_repo_collaborators(gitea_api: pygitea, collaborators: [gitla
 
 def _import_users(gitea_api: pygitea, users: [gitlab.v4.objects.User], notify: bool = False):
     for user in users:
+        if user.username in GITEA_RESERVED_USERNAMES:
+            print_warning("Skipping import of user '{}' with gitea reserved username".format(
+                user.username))
+            continue
         keys: [gitlab.v4.objects.UserKey] = user.keys.list(all=True)
 
         print("Importing user " + user.username + "...")
@@ -585,6 +628,9 @@ def _import_group_members(gitea_api: pygitea, members: [gitlab.v4.objects.GroupM
 
         # add members to teams
         for member in members:
+            if member.username in GITEA_RESERVED_USERNAMES:
+                print_warning("Skipping import of group member '{}' with gitea reserved username for group {}".format(member.username, group.name))
+                continue
             if not member_exists(gitea_api, member.username, first_team['id']):
                 import_response: requests.Response = gitea_api.put("/teams/" + str(first_team['id']) + "/members/" + member.username)
                 if import_response.ok:
