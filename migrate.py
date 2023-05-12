@@ -39,6 +39,10 @@ MIGRATE_BY_GROUPS = (os.getenv('MIGRATE_BY_GROUPS', '0')) == '1'
 # Migrated projects can be automatically archived on gitlab to avoid users pushing
 # there commits after the migration to gitea
 GITLAB_ARCHIVE_MIGRATED_PROJECTS = (os.getenv('GITLAB_ARCHIVE_MIGRATED_PROJECTS', '0')) == '1'
+
+# Limit to certain project IDs
+PROJECT_IDS = os.getenv('PROJECT_IDS', '')
+
 #######################
 # CONFIG SECTION END
 #######################
@@ -608,6 +612,11 @@ def import_users_groups(gitlab_api: gitlab.Gitlab, gitea_api: pygitea, users: Li
 
 def import_projects(gitlab_api: gitlab.Gitlab, gitea_api: pygitea, projects: List[gitlab.v4.objects.Project]):
     print("Found " + str(len(projects)) + " gitlab projects as user " + gitlab_api.user.username)
+
+    if PROJECT_IDS:
+        projects=[]
+        for x in PROJECT_IDS.split(','):
+            projects.append(gitlab_api.projects.get(id=x))
 
     for project in projects:
         if GITLAB_ARCHIVE_MIGRATED_PROJECTS:
