@@ -679,7 +679,12 @@ def import_projects(gitlab_api: gitlab.Gitlab, gitea_api: pygitea, projects: Lis
         try:
             collaborators: [gitlab.v4.objects.ProjectMember] = project.members.list(all=True)
             labels: [gitlab.v4.objects.ProjectLabel] = project.labels.list(all=True)
-            milestones: [gitlab.v4.objects.ProjectMilestone] = project.milestones.list(all=True)
+            try:
+                milestones: [gitlab.v4.objects.ProjectMilestone] = project.milestones.list(all=True)
+            except gitlab.exceptions.GitlabListError as e:
+                print_warning("Failed to fetch milestones for {}/{}: {}".format(
+                    project.namespace['name'], project.name, str(e)))
+                milestones = []
             issues: [gitlab.v4.objects.ProjectIssue] = project.issues.list(all=True)
 
             print("Importing project " + name_clean(project.name) + " from owner " + name_clean(project.namespace['name']))
