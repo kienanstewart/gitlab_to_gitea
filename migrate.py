@@ -518,10 +518,15 @@ def _import_project_repo(gitea_api: pygitea, project: gitlab.v4.objects.Project)
 
 def _import_project_repo_collaborators(gitea_api: pygitea, collaborators: [gitlab.v4.objects.ProjectMember], project: gitlab.v4.objects.Project):
     for collaborator in collaborators:
-        
         if not collaborator_exists(gitea_api, name_clean(project.namespace['name']), name_clean(project.name), collaborator.username):
+            if collaborator.id == project.owner['id']:
+                # Skip adding project owner as a collaborator, since that is inherent
+                # on the Gitea side
+                print_warning("Skipping import of collaborator {} for {}/{} since they are the project owner".format(
+                    collaborator.username, project.namespace['name'], project.name))
+                continue
             permission = "read"
-            
+
             if collaborator.access_level == 10:    # guest access
                 permission = "read"
             elif collaborator.access_level == 20:  # reporter access
