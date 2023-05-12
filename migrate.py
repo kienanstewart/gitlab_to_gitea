@@ -608,21 +608,21 @@ def _import_groups(gitea_api: pygitea, groups: [gitlab.v4.objects.Group]):
     for group in groups:
         members: [gitlab.v4.objects.GroupMember] = group.members.list(all=True)
 
-        print("Importing group " + name_clean(group.name) + "...")
-        print("Found " + str(len(members)) + " gitlab members for group " + name_clean(group.name))
+        print("Importing group " + name_clean(group.path) + "...")
+        print("Found " + str(len(members)) + " gitlab members for group " + name_clean(group.path))
 
-        if not organization_exists(gitea_api, name_clean(group.name)):
+        if not organization_exists(gitea_api, name_clean(group.path)):
             import_response: requests.Response = gitea_api.post("/orgs", json={
                 "description": group.description,
                 "full_name": group.full_name,
                 "location": "",
-                "username": name_clean(group.name),
+                "username": name_clean(group.path),
                 "website": ""
             })
             if import_response.ok:
-                print_info("Group " + name_clean(group.name) + " imported!")
+                print_info("Group " + name_clean(group.path) + " imported!")
             else:
-                print_error("Group " + name_clean(group.name) + " import failed: " + import_response.text)
+                print_error("Group " + name_clean(group.path) + " import failed: " + import_response.text)
 
         # import group members
         _import_group_members(gitea_api, members, group)
@@ -630,7 +630,7 @@ def _import_groups(gitea_api: pygitea, groups: [gitlab.v4.objects.Group]):
 
 def _import_group_members(gitea_api: pygitea, members: [gitlab.v4.objects.GroupMember], group: gitlab.v4.objects.Group):
     # TODO: create teams based on gitlab permissions (access_level of group member)
-    existing_teams = get_teams(gitea_api, name_clean(group.name))
+    existing_teams = get_teams(gitea_api, name_clean(group.path))
     if existing_teams:
         first_team = existing_teams[0]
         print("Organization teams fetched, importing users to first team: " + first_team['name'])
@@ -647,7 +647,7 @@ def _import_group_members(gitea_api: pygitea, members: [gitlab.v4.objects.GroupM
                 else:
                     print_error("Failed to add member " + member.username + " to group " + name_clean(group.name) + "!")
     else:
-        print_error("Failed to import members to group " + name_clean(group.name) + ": no teams found!")
+        print_error("Failed to import members to group " + name_clean(group.path) + ": no teams found!")
 
 
 #
